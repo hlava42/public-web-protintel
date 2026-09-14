@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisualNnet — Hard Competitive Learning &amp; Dot Product SOM, phase by phase</title>
+<meta name="description" content="VisualNnet: Hard Competitive Learning and Dot Product SOM animated phase by phase. Master's thesis, CTU Prague FEE, 2001, Petr Hummel. Core ported from the Java applet to HTML5 Canvas.">
+<style>
+  :root{
+    --bg:#0E1116; --bg-elev:#161B22; --bg-elev2:#1C222B;
+    --ink:#ECEFF3; --muted:#9AA4B0; --faint:#626C7A;
+    --line:rgba(255,255,255,.09); --line-soft:rgba(255,255,255,.05);
+    --accent:#C8923E; --accent-hi:#DBA552;
+    --input:#5C7A9E; --hcl:#ECEFF3; --dot:#7FA7D1;
+    --body:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),rgba(200,146,62,0));z-index:10}
+  a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--accent);transition:color .2s}
+  a:hover{color:var(--accent-hi)}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 56px}
+
+  /* header */
+  .head{margin:0 0 22px;padding:0 0 18px;border-bottom:1px solid var(--line)}
+  .head h1{font-size:22px;margin:0 0 6px;font-weight:600;letter-spacing:-.01em}
+  .head h1 span{color:var(--muted);font-weight:400;font-size:17px}
+  .head p{margin:0;color:var(--muted)}
+  .head .links{margin-top:10px;font-family:var(--mono);font-size:12.5px;letter-spacing:.04em}
+  .head .links a{color:var(--ink)}
+  .head .links .sep{color:var(--faint);margin:0 8px}
+
+  /* app grid */
+  .app{display:grid;grid-template-columns:minmax(0,1fr) 272px;gap:16px;align-items:start}
+  @media(max-width:860px){.app{grid-template-columns:1fr}}
+  .stage{background:var(--bg-elev);border:1px solid var(--line);border-radius:6px;padding:10px}
+  canvas{width:100%;height:auto;display:block;border-radius:4px;background:#0B0E13}
+
+  /* information panel (Fig. 4.5: information above the animation) */
+  .info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;
+    font-family:var(--mono);font-size:12px;line-height:1.35;color:var(--muted);padding:2px 4px 10px}
+  .info div{overflow-wrap:anywhere}
+  .info b{color:var(--ink);font-weight:500}
+  .info .k{color:var(--faint);letter-spacing:.06em;text-transform:uppercase;font-size:10.5px;display:block}
+
+  /* phase line */
+  .phase{margin-top:10px;padding:9px 12px;border:1px solid var(--line);border-radius:4px;
+    background:var(--bg);font-size:13.5px;min-height:58px}
+  .phase b{color:var(--accent-hi);font-weight:600}
+  .phase .why{color:var(--muted)}
+
+  /* example description */
+  .desc{margin-top:10px;padding:10px 12px;border-top:1px solid var(--line-soft);font-size:13.5px;color:var(--muted)}
+  .desc h3{margin:0 0 4px;font-size:13px;color:var(--ink);font-weight:600}
+  .desc p{margin:0 0 6px}
+  .desc .watch{color:var(--ink)}
+  .desc .watch b{color:var(--accent-hi);font-weight:500}
+
+  /* control panel */
+  .panel{background:var(--bg-elev);border:1px solid var(--line);border-radius:6px;padding:14px}
+  .panel h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px;font-weight:500;font-family:var(--mono)}
+  .row{margin:0 0 13px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
+  select,input[type=number]{width:100%;background:var(--bg-elev2);color:var(--ink);border:1px solid var(--line);
+    border-radius:4px;padding:7px 9px;font-size:13px;font-family:inherit}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .seg{display:flex;background:var(--bg-elev2);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  .seg button{flex:1;background:transparent;color:var(--muted);border:0;padding:8px 4px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:var(--accent);color:#14100A;font-weight:600}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn{background:var(--bg-elev2);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);color:#14100A;border-color:var(--accent);grid-column:1/-1;font-weight:600}
+  .btn.primary.running{background:var(--bg-elev2);color:var(--ink)}
+  .chk{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;cursor:pointer}
+  .chk input{accent-color:var(--accent)}
+  .legend{display:grid;grid-template-columns:1fr;gap:5px;font-size:12px;color:var(--muted);margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+  .sw.ring{background:transparent;border:2px solid var(--accent);width:11px;height:11px}
+  .sw.vec{border-radius:0;height:2px;width:14px;vertical-align:3px}
+  .sw.circ{background:transparent;border:1px dashed var(--faint)}
+
+  footer{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;max-width:80ch}
+  footer p{margin:0 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <h1>VisualNnet <span>— Hard Competitive Learning &amp; Dot Product SOM, animated phase by phase.</span></h1>
+    <p>Master's thesis, Czech Technical University in Prague, Faculty of Electrical Engineering, 2001 — Petr Hummel.</p>
+    <p>Core ported from the original Java applet to HTML5 Canvas in 2026 with an AI coding assistant; algorithm logic follows the original classes.</p>
+    <p class="links">
+      <a href="thesis/Hummel_2001_thesis_EN_unofficial.pdf">Thesis (unofficial English translation)</a><span class="sep">·</span>
+      <a href="verification.html">Verification notes</a><span class="sep">·</span>
+      <a href="/">protintel.com</a>
+    </p>
+  </header>
+
+  <div class="app">
+    <div class="stage">
+      <div class="info" id="info"></div>
+      <canvas id="cv" width="900" height="600"></canvas>
+      <div class="phase" id="phase"></div>
+      <div class="desc" id="desc"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Example</h2>
+      <div class="row">
+        <select id="example"></select>
+      </div>
+
+      <h2>Algorithm</h2>
+      <div class="row seg" id="algoSeg">
+        <button data-mode="hcl">HCL</button>
+        <button data-mode="dot">Dot Product SOM</button>
+        <button data-mode="all">Both</button>
+      </div>
+
+      <div class="row">
+        <label>Input data</label>
+        <select id="dataset"></select>
+      </div>
+
+      <div class="row">
+        <label>Selection of input samples</label>
+        <div class="seg" id="selSeg">
+          <button data-sel="random">Random</button>
+          <button data-sel="seq">In order</button>
+        </div>
+      </div>
+
+      <div class="row btns">
+        <button class="btn primary" id="play">Start</button>
+        <button class="btn" id="step" title="Execute one atomic phase of the iteration">Step (one phase)</button>
+        <button class="btn" id="restart">Restart</button>
+      </div>
+
+      <div class="row">
+        <label>Animation speed: <span id="spdLbl"></span></label>
+        <input type="range" id="speed" min="0" max="100" value="60">
+      </div>
+
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="fast"> Fast mode (final state of each iteration only)</label>
+      </div>
+
+      <div class="row">
+        <label>Seed (applied on Restart)</label>
+        <input type="number" id="seed" value="2001" min="0" step="1">
+      </div>
+
+      <div class="legend">
+        <span><i class="sw" style="background:var(--input)"></i>input samples</span>
+        <span><i class="sw" style="background:var(--hcl)"></i>HCL neurons</span>
+        <span><i class="sw vec" style="background:var(--dot)"></i>Dot Product SOM neurons (weight vectors)</span>
+        <span><i class="sw ring"></i>selected sample / winning neuron</span>
+        <span><i class="sw circ"></i>circle of radius 1 (normalised vectors)</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Unofficial translation; original in Czech. The port reproduces the algorithms and iteration phases of the 2001 applet; the eight example cases are rebuilt from §5.1 of the thesis. Known gaps are listed in the <a href="verification.html">verification notes</a>.</p>
+  </footer>
+</div>
+
+<!-- ============================================================
+     ENGINE — no DOM access. Mirrors the structure of the original
+     Java classes: Parameters (timeActual, timeOfFinish, modeOfExecution,
+     fastMode, setOfInputData/HCLData/DotData), Layer (position, situation,
+     allPassive), Nnet (lookingForBest, setupWinnerNeuron) and
+     ExecuteNnetHCL / ExecuteNnetDot / ExecuteNnetAll (selectPartOfIteration).
+     The same block is loaded in Node by the verification harness.
+     ============================================================ -->
+<script id="vn-engine">
+(function(root){
+"use strict";
+
+// ---- deterministic random numbers (mulberry32). Every random choice in the
+//      simulation — generated data, random layouts, random sample selection —
+//      is drawn from one generator seeded from the Seed field.
+function makeRng(seed){
+  let a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---- input-layer generators (fetchFullCircle / AddInputVector of the original)
+function fullCircle(rng, s1, s2, radius, count, out){   // constant density inside a circle
+  let n = 0;
+  while(n < count){
+    const x = (rng()*2-1)*radius, y = (rng()*2-1)*radius;
+    if(x*x + y*y <= radius*radius){ out.push({x:s1+x, y:s2+y}); n++; }
+  }
+}
+function onCircle(cx, cy, r, count, out){                // samples on the circumference, in angular order
+  for(let i=0;i<count;i++){ const a = 2*Math.PI*i/count; out.push({x:cx+r*Math.cos(a), y:cy+r*Math.sin(a)}); }
+}
+const deg = d => d*Math.PI/180;
+
+// ---- predefined input data (setOfInputData)
+const DATA = {
+  two:      { label:'Two input samples',
+              make(){ return [{x:0.90,y:0.20},{x:0.30,y:0.85}]; } },
+  regions2: { label:'Two isolated regions',
+              make(rng){ const p=[]; fullCircle(rng,-0.6,0,0.15,150,p); fullCircle(rng,0.6,0,0.15,150,p); return p; } },
+  circle:   { label:'Samples on a circle centred at [0,0]',
+              make(){ const p=[]; onCircle(0,0,0.6,36,p); return p; } },
+  regions4: { label:'Four isolated regions (Fig. 2.1)',
+              make(rng){ const p=[]; [[0.22,0.8],[0.68,0.8],[0.22,0.2],[0.68,0.2]].forEach(c=>fullCircle(rng,c[0],c[1],0.10,120,p)); return p; } },
+  triples:  { label:'Two triples of clusters on lines through the origin',
+              make(rng){ const p=[]; [20,155].forEach(a=>[0.35,0.65,0.95].forEach(r=>fullCircle(rng,r*Math.cos(deg(a)),r*Math.sin(deg(a)),0.06,40,p))); return p; } },
+};
+
+// ---- predefined HCL neuron layouts (setOfHCLData)
+const HCL_LAYOUTS = {
+  one:     { make(){ return [{x:-0.5,y:-0.4}]; } },
+  poor6:   { make(){ return [{x:-0.3,y:0.2},{x:0.77,y:0},{x:0.65,y:0.16},{x:0.46,y:0.10},{x:0.46,y:-0.10},{x:0.65,y:-0.16}]; } },
+  good6:   { make(){ return [{x:-0.5,y:0.25},{x:-0.72,y:-0.15},{x:-0.45,y:-0.22},{x:0.5,y:0.25},{x:0.72,y:-0.15},{x:0.45,y:-0.22}]; } },
+  circle2: { make(){ return [{x:0.5,y:0.5},{x:-1.2,y:-0.8}]; } },
+  random4: { make(rng){ const n=[]; for(let i=0;i<4;i++) n.push({x:rng(), y:rng()}); return n; } },
+  six:     { make(){ const n=[]; [35,140].forEach(a=>[0.35,0.65,0.95].forEach(r=>n.push({x:r*Math.cos(deg(a)),y:r*Math.sin(deg(a))}))); return n; } },
+};
+
+// ---- predefined Dot Product SOM neuron layouts (setOfDotData).
+//      Initial vectors are NOT normalised: per §2.1.6 a not-yet-used neuron is
+//      normalised only by its first adaptation, relation (2.21).
+const DOT_LAYOUTS = {
+  one:     { make(){ return [{x:-0.3,y:-0.5}]; } },
+  circle2: { make(){ return [{x:0.4,y:0.35},{x:-0.3,y:-0.4}]; } },
+  two:     { make(){ return [{x:0.5,y:-0.3},{x:-0.2,y:0.6}]; } },
+};
+
+// default neuron layouts used when the user combines input data with an algorithm by hand
+const DATA_DEFAULT_LAYOUT = {
+  two:{hcl:'one',dot:'one'}, regions2:{hcl:'good6',dot:'two'}, circle:{hcl:'circle2',dot:'circle2'},
+  regions4:{hcl:'random4',dot:'two'}, triples:{hcl:'six',dot:'two'}
+};
+
+// ---- the eight example cases of thesis §5.1
+const EXAMPLES = [
+  { id:1, name:'Introduction to Hard Competitive Learning', mode:'hcl', data:'two', hcl:'one', dot:'one', sel:'random', tFinish:40,
+    desc:'The basic principle of competition and adaptation of an HCL network on the simplest configuration: two input samples and one output neuron. The neuron’s position changes according to which sample is selected. At first the neuron moves all the way to the position of the selected sample; over time the change in its position keeps decreasing.',
+    watch:'The first move lands exactly on the selected sample (h(t) starts at 1); later moves shrink as h(t) decreases.' },
+  { id:2, name:'Introduction to Dot Product SOM', mode:'dot', data:'two', hcl:'one', dot:'one', sel:'random', tFinish:40,
+    desc:'The same aim as Example 1, with a neuron of the Dot Product SOM type. The new position is derived graphically as a composition of vectors according to relation (2.21): the neuron vector m, the input vector x shortened by the coefficient α(t), their sum, and its normalisation.',
+    watch:'The neuron is not normalised until its first adaptation; from then on it stays on the circle of radius 1. While α(t)·|x| exceeds |m| = 1, the new direction lies closer to the newest sample than to the neuron’s previous direction — the neuron is “un-learned”.' },
+  { id:3, name:'The influence of poor initialization on learning in HCL', mode:'hcl', data:'regions2', hcl:'poor6', dot:'two', sel:'random', tFinish:600,
+    desc:'One disadvantage of HCL is the influence of the initial positions of the neurons on the final placement. Two isolated regions of input samples and six HCL neurons: one neuron is placed so that it alone can reach region 1, the others are farther from the nearest point of region 1 than that region\u2019s diameter. Once a \u201cselfish\u201d neuron has grasped a region, its distance from every sample there is at most the region\u2019s diameter, so the others cannot win.',
+    watch:'One neuron takes the whole left region and five neurons divide the right one; the five never enter the left region.' },
+  { id:4, name:'Suitable initialization in HCL learning', mode:'hcl', data:'regions2', hcl:'good6', dot:'two', sel:'random', tFinish:600,
+    desc:'One way of suppressing the influence shown in Example 3 is to place the initial positions of the neurons suitably. Three neurons start near each of the two isolated regions, and the neurons then spread evenly in both regions.',
+    watch:'Three neurons settle in each region.' },
+  { id:5, name:'The influence of the input-sample selection method on HCL learning', mode:'hcl', data:'circle', hcl:'circle2', dot:'circle2', sel:'seq', tFinish:360,
+    desc:'The selection method influences learning, but with poor initialisation it helps only exceptionally. The samples lie on a circle centred at [0,0] and are selected by going around it in sequence, so the winning neuron is dragged behind the sample. A second neuron farther from the nearest sample than the radius cannot win under ordered selection. Random selection suppresses this: the first neuron is sometimes on the opposite side, and a sample close to the second neuron lets it win.',
+    watch:'In order: the second neuron never wins and never moves. Switch selection to Random and press Restart: it joins the learning.' },
+  { id:6, name:'The influence of the input-sample selection method on Dot Product SOM learning', mode:'dot', data:'circle', hcl:'circle2', dot:'circle2', sel:'seq', tFinish:360,
+    desc:'A similar problem of selection influence exists in the Dot Product SOM network. Two Dot Product SOM neurons on a circle of input samples: under ordered selection the competition always presents the sample closest to the neuron that has won so far, and that neuron keeps winning, so the second neuron never adapts. Under random selection it does.',
+    watch:'In order: only the first neuron turns around the circle. Switch selection to Random and press Restart: the second neuron wins and is normalised.' },
+  { id:7, name:'Four isolated regions', mode:'hcl', data:'regions4', hcl:'random4', dot:'two', sel:'random', tFinish:800,
+    desc:'A practical verification of Figure 2.1 of the thesis: four isolated regions of input vectors and four randomly placed HCL neurons. After Kohonen learning each output neuron places itself in the centre of one region.',
+    watch:'Whether all four neurons end in four different regions depends on the random placement (Example 3 explains why); try another seed and Restart.' },
+  { id:8, name:'Different conception of clusters after learning in HCL and Dot Product SOM', mode:'all', data:'triples', hcl:'six', dot:'two', sel:'random', tFinish:900,
+    desc:'The Dot Product SOM was created to suppress the influence of extreme values in some components of the input samples, so the two paradigms understand similarity differently. Two triples of clusters: the centres of each triple lie on a line through the origin; the two lines enclose at least 130\u00b0. Both layers learn on the same input at once. Each HCL neuron grasps one cluster and settles in its centre; a Dot Product SOM neuron turns toward a whole triple.',
+    watch:'Six HCL neurons, one per cluster; two Dot Product SOM neurons on the circle of radius 1, pointing along the two lines.' },
+];
+
+// ---- atomic phases of one iteration (§4.1.3); ExecuteNnetAll runs the HCL
+//      phases and then the Dot Product SOM phases on the same selected sample.
+const PHASES = {
+  hcl: ['init','select','hclWin','hclAdapt'],
+  dot: ['init','select','dotWin','dotM','dotAddX','dotShorten','dotNew','dotNorm','dotMove'],
+  all: ['init','select','hclWin','hclAdapt','dotWin','dotM','dotAddX','dotShorten','dotNew','dotNorm','dotMove'],
+};
+// what is happening and why — wording follows thesis §2.1.3, §2.1.6, §4.1.3
+const PHASE_INFO = {
+  init:      ['Initial state', 'All objects of every layer are passive; at the beginning of each iteration nothing is highlighted.'],
+  select:    ['Selection of the input sample', 'The highlighted sample is presented to the network; the output neurons now compete over which of them will be active for it.'],
+  hclWin:    ['Selection of the winning neuron (HCL)', 'The neuron with the smallest Euclidean distance from the sample wins, relation (2.4): it is the neuron that best represents the presented input.'],
+  hclAdapt:  ['Adaptation of the winning neuron (HCL)', 'The winner moves toward the selected sample by the proportional distance h(t), relation (2.5), so as to represent the given input even better; h(t) decreases toward zero so that the positions stabilise.'],
+  dotWin:    ['Selection of the winning neuron (Dot Product SOM)', 'The neuron with the highest dot product x·m wins, relation (2.9); for normalised neurons the dot product measures the angle between neuron and sample, so the competition is based on directional, not Euclidean, similarity.'],
+  dotM:      ['Adaptation 1/6 — drawing the neuron vector m', 'The winner’s weights are drawn as the vector m from the origin; the new position is composed from it according to relation (2.21).'],
+  dotAddX:   ['Adaptation 2/6 — adding the input vector x to m', 'Plain addition of the input vector to the neuron vector is the simplest operation that moves the neuron toward the presented input.'],
+  dotShorten:['Adaptation 3/6 — shortening x by the coefficient α(t)', 'α(t) specifies what part of x changes the new position; without it the positions would never stabilise. It may start above 1 and decreases toward zero over time.'],
+  dotNew:    ['Adaptation 4/6 — drawing the new vector m + α(t)·x', 'This is the new, not yet normalised, position of the neuron.'],
+  dotNorm:   ['Adaptation 5/6 — normalising the new vector', 'Because the proportionality between the enclosed angle and the dot product does not hold in general, the resulting vector must be normalised, relation (2.21); normalised neurons lie on the circle of radius 1.'],
+  dotMove:   ['Adaptation 6/6 — moving the neuron', 'The winning neuron is moved to the new position determined by the normalised vector.'],
+};
+
+const dist2 = (a,b) => (a.x-b.x)**2 + (a.y-b.y)**2;
+const dotp  = (a,b) => a.x*b.x + a.y*b.y;
+const norm  = v => { const m = Math.hypot(v.x,v.y) || 1e-12; return {x:v.x/m, y:v.y/m}; };
+
+// ---- Sim: one simulation = Parameters + input layer + up to two output layers
+class Sim {
+  constructor(cfg){
+    // cfg: {mode:'hcl'|'dot'|'all', data, hcl, dot, sel:'random'|'seq', seed, tFinish, h0, a0}
+    this.cfg = Object.assign({seed:2001, tFinish:400, h0:1.0, a0:1.5, sel:'random'}, cfg);
+    this.reset();
+  }
+  reset(){
+    const c = this.cfg;
+    this.rng = makeRng(c.seed);
+    this.input = DATA[c.data].make(this.rng);
+    this.hcl = c.mode !== 'dot' ? { neurons: HCL_LAYOUTS[c.hcl].make(this.rng), position:-1, allPassive:true } : null;
+    this.dot = c.mode !== 'hcl' ? { neurons: DOT_LAYOUTS[c.dot].make(this.rng), position:-1, allPassive:true } : null;
+    this.t = 0; this.tFinish = c.tFinish;
+    this.selIdx = -1; this.seqPtr = 0;
+    this.phases = PHASES[c.mode]; this.pi = 0; this.phase = 'init';
+    this.construct = null; this.anim = null;
+  }
+  // learning coefficient derived from timeActual (thesis names it h(t) for HCL, α(t) for Dot Product SOM).
+  // The schedule itself is not given in the thesis; the port uses a linear decrease from the
+  // initial value at the first iteration (t = 1) to zero at the last one (t = timeOfFinish).
+  coef(layer){
+    const a0 = layer === 'hcl' ? this.cfg.h0 : this.cfg.a0, T = this.tFinish, t = Math.max(1, this.t);
+    return T > 1 ? Math.max(0, a0 * (T - t) / (T - 1)) : a0;
+  }
+  finished(){ return this.t >= this.tFinish && this.pi === 0; }   // getFinishStatus()
+
+  // selectPartOfIteration(): execute exactly one atomic phase and return its key
+  step(){
+    if(this.finished()) return null;
+    const key = this.phases[this.pi];
+    this.anim = null;
+    switch(key){
+      case 'init':
+        this.selIdx = -1; this.construct = null;
+        if(this.hcl){ this.hcl.allPassive = true; }
+        if(this.dot){ this.dot.allPassive = true; }
+        break;
+      case 'select':                                   // setToNextVector(); timeActual increases by 1
+        if(this.cfg.sel === 'seq'){ this.selIdx = this.seqPtr % this.input.length; this.seqPtr++; }
+        else this.selIdx = Math.floor(this.rng() * this.input.length);
+        this.t++;
+        break;
+      case 'hclWin': {                                 // NnetHCL.lookingForBest(): arg min ||x − w||
+        const x = this.input[this.selIdx]; let best = -1, bd = Infinity;
+        this.hcl.neurons.forEach((m,i) => { const d = dist2(m,x); if(d < bd){ bd = d; best = i; } });
+        this.hcl.position = best; this.hcl.allPassive = false;
+        break; }
+      case 'hclAdapt': {                               // NnetHCL.setupWinnerNeuron(): w += h(t)·(x − w)
+        const x = this.input[this.selIdx], i = this.hcl.position, m = this.hcl.neurons[i], h = this.coef('hcl');
+        const to = { x: m.x + h*(x.x - m.x), y: m.y + h*(x.y - m.y) };
+        this.anim = { layer:'hcl', idx:i, from:{x:m.x,y:m.y}, to };
+        this.hcl.neurons[i] = to;
+        break; }
+      case 'dotWin': {                                 // NnetDot.lookingForBest(): arg max x·m
+        const x = this.input[this.selIdx]; let best = -1, bs = -Infinity;
+        this.dot.neurons.forEach((m,i) => { const s = dotp(m,x); if(s > bs){ bs = s; best = i; } });
+        this.dot.position = best; this.dot.allPassive = false;
+        break; }
+      case 'dotM': {                                   // composition of vectors, relation (2.21)
+        const x = this.input[this.selIdx], i = this.dot.position, m = this.dot.neurons[i], a = this.coef('dot');
+        const ax = { x:a*x.x, y:a*x.y }, sum = { x:m.x+ax.x, y:m.y+ax.y };
+        this.construct = { m:{x:m.x,y:m.y}, x:{x:x.x,y:x.y}, a, ax, sum, normed:norm(sum), stage:1 };
+        break; }
+      case 'dotAddX':   this.construct.stage = 2; break;
+      case 'dotShorten':this.construct.stage = 3; break;
+      case 'dotNew':    this.construct.stage = 4; break;
+      case 'dotNorm':   this.construct.stage = 5; break;
+      case 'dotMove': {                                // NnetDot.setupWinnerNeuron(): m = (m + α·x)/||m + α·x||
+        const i = this.dot.position, c = this.construct;
+        this.anim = { layer:'dot', idx:i, from:c.m, to:c.normed };
+        this.dot.neurons[i] = { x:c.normed.x, y:c.normed.y };
+        c.stage = 6;
+        break; }
+    }
+    this.phase = key;
+    this.pi = (this.pi + 1) % this.phases.length;
+    return key;
+  }
+  // one whole iteration (fast mode: only the final state is displayed)
+  iterate(){ if(this.finished()) return false; do { this.step(); } while(this.pi !== 0); return true; }
+}
+
+root.VN = { makeRng, DATA, HCL_LAYOUTS, DOT_LAYOUTS, DATA_DEFAULT_LAYOUT, EXAMPLES, PHASES, PHASE_INFO, Sim, norm, dotp, dist2 };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- ============================================================
+     USER INTERFACE — MainGraphicsPanel (paint*), MainProgram (controls),
+     RunNnet (the animation thread, here an async loop).
+     ============================================================ -->
+<script>
+"use strict";
+const VN = window.VN;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const W = 900, H = 600;
+const infoEl = document.getElementById('info'), phaseEl = document.getElementById('phase'), descEl = document.getElementById('desc');
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { input:css('--input'), hcl:css('--hcl'), dot:css('--dot'), accent:css('--accent'), accentHi:css('--accent-hi'),
+            ink:css('--ink'), muted:css('--muted'), faint:css('--faint'), grid:'rgba(255,255,255,0.07)', axis:'rgba(255,255,255,0.22)' };
+
+// crisp canvas on high-DPI screens
+(function(){ const d = Math.min(window.devicePixelRatio || 1, 2); cv.width = W*d; cv.height = H*d; ctx.setTransform(d,0,0,d,0,0); })();
+
+// ---- program state (Parameters + UI state)
+const P = {
+  example: 1, mode:'hcl', data:'two', hcl:'one', dot:'one', sel:'random', seed:2001,
+  tFinish:40, h0:1.0, a0:1.5,
+  fast:false, speed:60, running:false, paused:true, gen:0,
+  sim:null, override:null,   // override: {layer, idx, pos} while a movement is animated
+};
+
+function applyExample(id){
+  const e = VN.EXAMPLES.find(x => x.id === id);
+  P.example = id; P.mode = e.mode; P.data = e.data; P.hcl = e.hcl; P.dot = e.dot; P.sel = e.sel; P.tFinish = e.tFinish;
+}
+function buildSim(){
+  P.sim = new VN.Sim({ mode:P.mode, data:P.data, hcl:P.hcl, dot:P.dot, sel:P.sel, seed:P.seed, tFinish:P.tFinish, h0:P.h0, a0:P.a0 });
+  P.override = null;
+  fitView();
+}
+
+// ---- view: equal scale on both axes, fitted to all objects (axes and scale, §4.1.2)
+let V = { s:1, ox:0, oy:0 };
+function fitView(){
+  const s = P.sim; let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  const take = p => { if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x; if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y; };
+  s.input.forEach(take); if(s.hcl) s.hcl.neurons.forEach(take); if(s.dot) s.dot.neurons.forEach(take);
+  take({x:0,y:0});
+  if(s.dot){ take({x:-1,y:-1}); take({x:1,y:1}); }              // circle of radius 1 must be visible
+  const padX = 0.10*(maxX-minX || 1), padY = 0.10*(maxY-minY || 1);
+  minX-=padX; maxX+=padX; minY-=padY; maxY+=padY;
+  const pad = 44;
+  const sc = Math.min((W-2*pad)/(maxX-minX), (H-2*pad)/(maxY-minY));
+  V.s = sc;
+  V.ox = (W - sc*(maxX-minX))/2 - sc*minX;
+  V.oy = (H - sc*(maxY-minY))/2 + sc*maxY;
+}
+const tx = x => V.ox + x*V.s, ty = y => V.oy - y*V.s;
+
+// ---- drawing primitives (paintVector, paintDescriptionAxes, ...)
+function arrow(ax, ay, bx, by, color, width, dashed){
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width;
+  if(dashed) ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(tx(ax),ty(ay)); ctx.lineTo(tx(bx),ty(by)); ctx.stroke();
+  ctx.setLineDash([]);
+  const ang = Math.atan2(ty(by)-ty(ay), tx(bx)-tx(ax)), hl = 9;
+  ctx.beginPath(); ctx.moveTo(tx(bx),ty(by));
+  ctx.lineTo(tx(bx)-hl*Math.cos(ang-0.42), ty(by)-hl*Math.sin(ang-0.42));
+  ctx.lineTo(tx(bx)-hl*Math.cos(ang+0.42), ty(by)-hl*Math.sin(ang+0.42));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function label(text, x, y, color){ ctx.fillStyle = color; ctx.font = '12px ' + css('--mono'); ctx.fillText(text, x, y); }
+// label beside a vector A→B: at fraction u of its length, offset perpendicular by off px (sign = side)
+function vlabel(text, ax, ay, bx, by, u, off, color){
+  const X1 = tx(ax), Y1 = ty(ay), X2 = tx(bx), Y2 = ty(by), L = Math.hypot(X2-X1, Y2-Y1) || 1;
+  const nx = -(Y2-Y1)/L, ny = (X2-X1)/L, px = X1 + (X2-X1)*u + nx*off, py = Y1 + (Y2-Y1)*u + ny*off;
+  ctx.save(); ctx.fillStyle = color; ctx.font = '12px ' + css('--mono'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, px, py); ctx.restore();
+}
+function axes(){
+  const x0 = tx(0), y0 = ty(0);
+  const xMin = (0 - V.ox)/V.s, xMax = (W - V.ox)/V.s, yMin = (V.oy - H)/V.s, yMax = V.oy/V.s;
+  const stepG = (xMax-xMin) > 2.6 ? 0.5 : 0.2;
+  ctx.lineWidth = 1; ctx.strokeStyle = C.grid; ctx.font = '11px ' + css('--mono');
+  for(let g = Math.ceil(xMin/stepG)*stepG; g <= xMax; g += stepG){
+    const X = tx(g); ctx.beginPath(); ctx.moveTo(X,0); ctx.lineTo(X,H); ctx.stroke();
+    if(Math.abs(g) > 1e-9 && y0 > 12 && y0 < H) label((+g.toFixed(1)).toString(), X+3, Math.min(H-6, y0+13), C.faint);
+  }
+  for(let g = Math.ceil(yMin/stepG)*stepG; g <= yMax; g += stepG){
+    const Y = ty(g); ctx.beginPath(); ctx.moveTo(0,Y); ctx.lineTo(W,Y); ctx.stroke();
+    if(Math.abs(g) > 1e-9 && x0 > 0 && x0 < W-20) label((+g.toFixed(1)).toString(), Math.max(4, x0+4), Y-3, C.faint);
+  }
+  ctx.strokeStyle = C.axis;
+  if(y0 >= 0 && y0 <= H){ ctx.beginPath(); ctx.moveTo(0,y0); ctx.lineTo(W,y0); ctx.stroke(); label('x₁', W-22, y0-6, C.muted); }
+  if(x0 >= 0 && x0 <= W){ ctx.beginPath(); ctx.moveTo(x0,0); ctx.lineTo(x0,H); ctx.stroke(); label('x₂', x0+6, 14, C.muted); }
+}
+function unitCircle(strong){
+  ctx.save(); ctx.strokeStyle = strong ? C.ink : C.faint; ctx.lineWidth = strong ? 1.4 : 1; ctx.setLineDash([4,5]);
+  ctx.beginPath(); ctx.arc(tx(0), ty(0), V.s, 0, 2*Math.PI); ctx.stroke(); ctx.restore();
+}
+function dot(x, y, r, fill, ring){
+  ctx.beginPath(); ctx.arc(tx(x), ty(y), r, 0, 2*Math.PI); ctx.fillStyle = fill; ctx.fill();
+  if(ring){ ctx.lineWidth = 2; ctx.strokeStyle = ring; ctx.stroke(); }
+}
+
+// ---- paintComponent(): input layer, then every output layer on top (allLayers)
+function draw(){
+  const s = P.sim;
+  ctx.clearRect(0,0,W,H);
+  axes();
+  if(s.dot) unitCircle(s.construct && s.construct.stage === 5);
+
+  // paintInputDataComponent
+  s.input.forEach((p,i) => {
+    const on = (i === s.selIdx);
+    dot(p.x, p.y, on ? 5.5 : 2.6, on ? C.accent : C.input, on ? C.accentHi : null);
+  });
+
+  // paintDotNeuronComponent: weight vectors from the origin, neuron at the tip
+  if(s.dot){
+    const c = s.construct;
+    s.dot.neurons.forEach((m,i) => {
+      const win = (!s.dot.allPassive && i === s.dot.position);
+      let pos = m;
+      if(P.override && P.override.layer === 'dot' && P.override.idx === i) pos = P.override.pos;
+      else if(win && c && c.stage < 6) pos = c.m;             // during construction the neuron is still at m
+      arrow(0, 0, pos.x, pos.y, win ? C.accent : C.dot, win ? 2.4 : 1.5);
+      dot(pos.x, pos.y, win ? 6.5 : 5, win ? C.accent : C.dot, win ? C.accentHi : '#0B0E13');
+    });
+    // vector construction, relation (2.21): stages 1..5
+    if(c && c.stage >= 2 && c.stage < 6){
+      const tipX = c.m.x, tipY = c.m.y, sx = tipX + c.x.x, sy = tipY + c.x.y, axX = tipX + c.ax.x, axY = tipY + c.ax.y;
+      arrow(tipX, tipY, sx, sy, c.stage === 2 ? C.ink : C.faint, 1.4, true);
+      vlabel('x', tipX, tipY, sx, sy, 0.5, -14, c.stage === 2 ? C.ink : C.faint);
+      if(c.stage >= 3){
+        arrow(tipX, tipY, axX, axY, C.accentHi, 2, false);
+        vlabel('\u03b1(t)\u00b7x', tipX, tipY, axX, axY, 0.5, 16, C.accentHi);
+      }
+      if(c.stage >= 4){
+        arrow(0, 0, c.sum.x, c.sum.y, C.accentHi, 2.2, false);
+        vlabel('m + \u03b1(t)\u00b7x', 0, 0, c.sum.x, c.sum.y, 0.8, -18, C.accentHi);
+      }
+      if(c.stage >= 5){
+        arrow(0, 0, c.normed.x, c.normed.y, C.ink, 2.2, false);
+        dot(c.normed.x, c.normed.y, 5, C.ink, C.accentHi);
+        vlabel('normalised', 0, 0, c.normed.x, c.normed.y, 1 + 46/V.s, 0, C.ink);   // just outside the circle
+      }
+    }
+    if(c && c.stage >= 1 && c.stage < 6) vlabel('m', 0, 0, c.m.x, c.m.y, 0.5, 14, C.dot);
+  }
+
+  // paintHCLNeuronComponent
+  if(s.hcl){
+    s.hcl.neurons.forEach((m,i) => {
+      const win = (!s.hcl.allPassive && i === s.hcl.position);
+      let pos = m;
+      if(P.override && P.override.layer === 'hcl' && P.override.idx === i) pos = P.override.pos;
+      dot(pos.x, pos.y, win ? 7 : 5.5, win ? C.accent : C.hcl, win ? C.accentHi : '#0B0E13');
+    });
+  }
+  paintTextBox();
+}
+
+// ---- paintTextBox(): the information panel
+const MODE_NAME = { hcl:'Hard Competitive Learning', dot:'Dot Product SOM', all:'HCL + Dot Product SOM (both at once)' };
+function paintTextBox(){
+  const s = P.sim;
+  const ex = P.example ? 'Example ' + P.example : 'Custom configuration';
+  const coefs = [];
+  if(s.hcl) coefs.push('h(t) = ' + s.coef('hcl').toFixed(4));
+  if(s.dot) coefs.push('α(t) = ' + s.coef('dot').toFixed(4));
+  infoEl.innerHTML =
+    `<div><span class="k">Algorithm</span><b>${MODE_NAME[P.mode]}</b></div>` +
+    `<div><span class="k">Example · seed</span><b>${ex}</b> · ${P.seed}</div>` +
+    `<div><span class="k">Mode · selection</span><b>${P.fast ? 'fast' : 'slow'}</b> · ${P.sel === 'seq' ? 'in order' : 'random'}</div>` +
+    `<div><span class="k">Iteration t</span><b>${s.t}</b> / ${s.tFinish}</div>` +
+    `<div><span class="k">Learning coefficient</span><b>${coefs.join(' · ')}</b></div>`;
+}
+function showPhase(key, extra){
+  if(key === null){ phaseEl.innerHTML = '<b>Finished</b> <span class="why">timeActual reached timeOfFinish; the simulation ends. Press Restart to run again.</span>'; return; }
+  const d = VN.PHASE_INFO[key];
+  phaseEl.innerHTML = `<b>${d[0]}</b> <span class="why">${d[1]}${extra || ''}</span>`;
+}
+function showDesc(){
+  if(!P.example){ descEl.innerHTML = '<h3>Custom configuration</h3><p>Input data and algorithm combined by hand — not one of the eight example cases of the thesis.</p>'; return; }
+  const e = VN.EXAMPLES.find(x => x.id === P.example);
+  descEl.innerHTML = `<h3>Example ${e.id} — ${e.name}</h3><p>${e.desc}</p><p class="watch"><b>What to watch for:</b> ${e.watch}</p>`;
+}
+
+// ---- RunNnet: the animation loop
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const delay = () => 60 + (100 - P.speed) * 14;              // ms per phase (parameter.timeWait)
+async function gate(gen){ while(P.paused && P.running && gen === P.gen) await sleep(40); return P.running && gen === P.gen; }
+
+async function animateMove(gen, anim){
+  const steps = Math.max(6, Math.round(delay() / 30));
+  for(let k = 1; k <= steps; k++){
+    const u = k/steps, e = u*u*(3-2*u);
+    P.override = { layer:anim.layer, idx:anim.idx, pos:{ x:anim.from.x + (anim.to.x-anim.from.x)*e, y:anim.from.y + (anim.to.y-anim.from.y)*e } };
+    draw(); if(!await gate(gen)) return false; await sleep(Math.max(8, delay()/steps));
+  }
+  P.override = null; return true;
+}
+// after timeOfFinish: show the final placement with all objects passive
+function finishDisplay(){ const s = P.sim; s.selIdx = -1; s.construct = null; if(s.hcl) s.hcl.allPassive = true; if(s.dot) s.dot.allPassive = true; }
+async function runPhase(gen){                                // one atomic phase, animated
+  const s = P.sim, key = s.step();
+  if(key === null){ finishDisplay(); showPhase(null); draw(); return false; }
+  showPhase(key);
+  if(s.anim){ const ok = await animateMove(gen, s.anim); if(!ok) return false; }
+  draw();
+  return true;
+}
+async function runLoop(){
+  const gen = ++P.gen; P.running = true; syncPlay();
+  while(P.running && gen === P.gen && !P.sim.finished()){
+    if(P.fast){
+      const s = P.sim; let n = 0;
+      while(n < 50 && s.iterate()) n++;                    // display every 50 iterations
+      P.override = null; showPhase('init', ' Fast mode: only the final state of each iteration is displayed.'); draw();
+      if(!await gate(gen)) return; await sleep(0);
+    } else {
+      if(!await gate(gen)) return;
+      if(!await runPhase(gen)) break;
+      if(!await gate(gen)) return;
+      await sleep(P.sim.phase === 'init' ? delay()*0.35 : delay());
+    }
+  }
+  if(gen === P.gen){ P.running = false; P.paused = true; if(P.sim.finished()){ finishDisplay(); showPhase(null); } syncPlay(); draw(); }
+}
+
+// ---- controls (MainProgram)
+const playBtn = document.getElementById('play');
+function syncPlay(){ playBtn.textContent = (P.running && !P.paused) ? 'Pause' : (P.running ? 'Continue' : 'Start'); playBtn.classList.toggle('running', P.running && !P.paused); }
+function stopRun(){ P.running = false; P.gen++; P.paused = true; }
+function restart(){ stopRun(); P.seed = Math.max(0, Math.floor(+document.getElementById("seed").value || 0)); buildSim(); showPhase("init"); showDesc(); syncUI(); syncPlay(); draw(); }
+
+playBtn.onclick = () => {
+  if(P.sim.finished()) return;
+  if(!P.running){ P.paused = false; runLoop(); }
+  else { P.paused = !P.paused; syncPlay(); }
+};
+document.getElementById('step').onclick = async () => {
+  if(P.running){ P.paused = true; syncPlay(); return; }
+  const gen = ++P.gen; P.running = true; P.paused = false;
+  await runPhase(gen);
+  if(gen === P.gen){ P.running = false; P.paused = true; syncPlay(); draw(); }
+};
+document.getElementById('restart').onclick = restart;
+
+document.getElementById('algoSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+  P.mode = b.dataset.mode; P.example = 0;
+  P.tFinish = Math.max(P.tFinish, 200);
+  restart();
+};
+document.getElementById('selSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+  P.sel = b.dataset.sel; if(P.sim) P.sim.cfg.sel = P.sel;     // takes effect at the next selection of a sample
+  syncUI(); paintTextBox();
+};
+const exSel = document.getElementById('example');
+VN.EXAMPLES.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = `${e.id} — ${e.name}`; exSel.appendChild(o); });
+{ const o = document.createElement('option'); o.value = 0; o.textContent = 'Custom configuration'; exSel.appendChild(o); }
+exSel.onchange = () => { const id = +exSel.value; if(id){ applyExample(id); } else { P.example = 0; } restart(); };
+
+const dsSel = document.getElementById('dataset');
+Object.entries(VN.DATA).forEach(([k,d]) => { const o = document.createElement('option'); o.value = k; o.textContent = d.label; dsSel.appendChild(o); });
+dsSel.onchange = () => {
+  P.data = dsSel.value; const L = VN.DATA_DEFAULT_LAYOUT[P.data]; P.hcl = L.hcl; P.dot = L.dot; P.example = 0;
+  P.tFinish = Math.max(P.tFinish, 200);
+  restart();
+};
+
+const spd = document.getElementById('speed'), spdLbl = document.getElementById('spdLbl');
+spd.oninput = () => { P.speed = +spd.value; spdLbl.textContent = P.speed + '%'; };
+document.getElementById('fast').onchange = e => { P.fast = e.target.checked; paintTextBox(); };
+
+function syncUI(){
+  exSel.value = P.example; dsSel.value = P.data;
+  [...document.querySelectorAll('#algoSeg button')].forEach(b => b.classList.toggle('on', b.dataset.mode === P.mode));
+  [...document.querySelectorAll('#selSeg button')].forEach(b => b.classList.toggle('on', b.dataset.sel === P.sel));
+  document.getElementById('seed').value = P.seed;
+  spdLbl.textContent = P.speed + '%';
+}
+
+// ---- init
+applyExample(1); buildSim(); syncUI(); showPhase('init'); showDesc(); syncPlay(); draw();
+</script>
+</body>
+</html>

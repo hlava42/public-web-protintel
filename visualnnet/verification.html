@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisualNnet — verification notes</title>
+<style>
+  :root{--bg:#0E1116;--bg-elev:#161B22;--ink:#ECEFF3;--muted:#9AA4B0;--faint:#626C7A;--line:rgba(255,255,255,.09);--accent:#C8923E;--accent-hi:#DBA552}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),rgba(200,146,62,0))}
+  .wrap{max-width:900px;margin:0 auto;padding:28px 24px 64px}
+  a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--accent)} a:hover{color:var(--accent-hi)}
+  .nav{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:12.5px;letter-spacing:.04em;color:var(--faint);margin:0 0 22px;padding:0 0 14px;border-bottom:1px solid var(--line)}
+  .nav .sep{margin:0 8px}
+  h1{font-size:24px;margin:0 0 18px;font-weight:600;letter-spacing:-.01em}
+  h2{font-size:18px;margin:34px 0 10px;font-weight:600;color:var(--accent-hi)}
+  h3{font-size:15px;margin:22px 0 8px;font-weight:600}
+  p,li{color:var(--ink)} li{margin:0 0 6px}
+  code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:13px;background:var(--bg-elev);padding:1px 5px;border-radius:3px}
+  .tbl{overflow-x:auto;margin:10px 0 18px}
+  table{border-collapse:collapse;font-size:13.5px;min-width:100%}
+  th,td{border:1px solid var(--line);padding:6px 9px;vertical-align:top;text-align:left}
+  th{color:var(--muted);font-weight:500;background:var(--bg-elev);white-space:nowrap}
+  strong{font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="nav"><a href="./">VisualNnet demo</a><span class="sep">·</span><a href="README.md">README</a><span class="sep">·</span><a href="VERIFICATION.md">VERIFICATION.md (source of this page)</a><span class="sep">·</span><a href="/">protintel.com</a></p>
+<h1>VisualNnet port — verification notes</h1>
+<p>These notes record what was checked in the 2026 HTML5 Canvas port against the 2001 thesis
+(unofficial English translation, <code>thesis/Hummel_2001_thesis_EN_unofficial.pdf</code>), what had to be
+chosen because the thesis does not give it, and what the port does not contain.</p>
+<p>All numbers below come from actual runs of the engine, not from reading the code. The engine is
+the <code>&lt;script id="vn-engine"&gt;</code> block of <code>index.html</code>; it has no DOM dependency, and the harness
+<code>verify.js</code> (Node.js, <code>node verify.js</code>) loads that exact block and runs the checks. The same runs
+can be reproduced in the browser with the seed field set to <strong>2001</strong> (the default), the example
+selected, fast mode on, and Start. Section and equation numbers refer to the thesis.</p>
+<h2>1. Algorithm check</h2>
+<h3>1.1 Hard Competitive Learning — Example 1 (2 samples, 1 neuron), seed 2001</h3>
+<p>Configuration: samples (0.9000, 0.2000) and (0.3000, 0.8500); initial neuron (−0.5000, −0.4000);
+timeOfFinish = 40; h(t) = 1.0 · (40 − t)/39 (see §4 for the choice of schedule). Adaptation is
+relation (2.5): w(t+1) = w(t) + h(t)·[x(t) − w(t)].</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>t</th>
+<th>selected sample</th>
+<th>h(t)</th>
+<th>neuron after adaptation</th>
+<th>distance moved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0 (0.9000, 0.2000)</td>
+<td>1.0000</td>
+<td>(0.9000, 0.2000)</td>
+<td>1.5232</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0 (0.9000, 0.2000)</td>
+<td>0.9744</td>
+<td>(0.9000, 0.2000)</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0 (0.9000, 0.2000)</td>
+<td>0.9487</td>
+<td>(0.9000, 0.2000)</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 (0.3000, 0.8500)</td>
+<td>0.9231</td>
+<td>(0.3462, 0.8000)</td>
+<td>0.8165</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0 (0.9000, 0.2000)</td>
+<td>0.8974</td>
+<td>(0.8432, 0.2615)</td>
+<td>0.7328</td>
+</tr>
+<tr>
+<td>10</td>
+<td>0 (0.9000, 0.2000)</td>
+<td>0.7692</td>
+<td>(0.9000, 0.2000)</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>20</td>
+<td>1 (0.3000, 0.8500)</td>
+<td>0.5128</td>
+<td>(0.5546, 0.5741)</td>
+<td>0.3952</td>
+</tr>
+<tr>
+<td>40</td>
+<td>1 (0.3000, 0.8500)</td>
+<td>0.0000</td>
+<td>(0.5236, 0.6077)</td>
+<td>0.0000</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>First adaptation (t = 1): distance between the neuron and the selected sample after the move
+  = 1.2·10⁻¹⁶, i.e. the neuron "moves all the way to the position of the selected input sample"
+  as §5.1, Example 1 describes. (A first version of the port used h(t) = 1 − t/T, which gave
+  h(1) = 0.975 and a residual distance of 0.033; the schedule was changed so that h(1) = 1 exactly.)</li>
+<li>h(t) is non-increasing over all 40 iterations: h(1) = 1.0000, h(20) = 0.5128, h(40) = 0.0000.
+  The distance moved in one iteration equals h(t)·|x − w|, so the step toward a given sample
+  shrinks with t, as Example 1 describes ("the change in the neuron's position keeps decreasing").</li>
+</ul>
+<p>Same configuration with timeOfFinish = 100 (the brief asked for 1, 5, 20, 100 iterations):</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>t</th>
+<th>h(t)</th>
+<th>neuron</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1.0000</td>
+<td>(0.9000, 0.2000)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0.9596</td>
+<td>(0.8765, 0.2255)</td>
+</tr>
+<tr>
+<td>20</td>
+<td>0.8081</td>
+<td>(0.4121, 0.7285)</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.0000</td>
+<td>(0.7180, 0.3972)</td>
+</tr>
+</tbody>
+</table></div>
+<h3>1.2 Dot Product SOM — Example 2 (2 samples, 1 neuron), seed 2001</h3>
+<p>Configuration: the same two samples, |x| = 0.922 and 0.901; initial neuron (−0.3000, −0.5000),
+|m| = 0.583 (deliberately not normalised, §2.1.6: a not-yet-used neuron is normalised by its
+first adaptation); timeOfFinish = 40; α(t) = 1.5 · (40 − t)/39. Competition is relation (2.9)
+(arg max x·m), adaptation is relation (2.21): m(t+1) = (m + α(t)·x) / ‖m + α(t)·x‖.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>t</th>
+<th>sample</th>
+<th>α(t)</th>
+<th>α(t)·|x|</th>
+<th>angle(m_old, x)</th>
+<th>angle(m_new, x)</th>
+<th>angle(m_new, m_old)</th>
+<th>|m_new|</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>1.5000</td>
+<td>1.3829</td>
+<td>133.49°</td>
+<td>23.31°</td>
+<td>110.18°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0</td>
+<td>1.4615</td>
+<td>1.3475</td>
+<td>23.31°</td>
+<td>9.91°</td>
+<td>13.41°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0</td>
+<td>1.4231</td>
+<td>1.3120</td>
+<td>9.91°</td>
+<td>4.28°</td>
+<td>5.62°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td>1.3846</td>
+<td>1.2481</td>
+<td>62.31°</td>
+<td>27.34°</td>
+<td>34.97°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0</td>
+<td>1.3462</td>
+<td>1.2411</td>
+<td>30.69°</td>
+<td>13.65°</td>
+<td>17.04°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0</td>
+<td>1.3077</td>
+<td>1.2056</td>
+<td>13.65°</td>
+<td>6.19°</td>
+<td>7.47°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>10</td>
+<td>0</td>
+<td>1.1538</td>
+<td>1.0638</td>
+<td>0.64°</td>
+<td>0.31°</td>
+<td>0.33°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>12</td>
+<td>0</td>
+<td>1.0769</td>
+<td>0.9929</td>
+<td>0.15°</td>
+<td>0.08°</td>
+<td>0.08°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>20</td>
+<td>1</td>
+<td>0.7692</td>
+<td>0.6934</td>
+<td>47.57°</td>
+<td>28.35°</td>
+<td>19.22°</td>
+<td>1.000000000000</td>
+</tr>
+<tr>
+<td>40</td>
+<td>1</td>
+<td>0.0000</td>
+<td>0.0000</td>
+<td>21.52°</td>
+<td>21.52°</td>
+<td>0.00°</td>
+<td>1.000000000000</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>Normalisation: maximum deviation of |m| from 1 after adaptation, over all 40 iterations,
+  is 2.2·10⁻¹⁶ (double-precision rounding). The initial vector of length 0.583 becomes a unit
+  vector at t = 1 and stays one.</li>
+<li>"Un-learning" while α &gt; 1 (§2.1.6: "If α(t) &gt; 1, the learned neuron is 'un-learned', and
+  thereby gives another neuron the chance to win"): in every iteration in which α(t)·|x| &gt; |m| = 1
+  and the sample was not already aligned with the neuron (9 such iterations), the adapted neuron
+  ended closer in angle to the new sample than to its own previous direction — 9 of 9 cases
+  (e.g. t = 1: 23.31° to the new sample vs. 110.18° from the old direction). The resultant of
+  m and α(t)·x lies closer to the longer of the two vectors, so the thesis's statement holds in the
+  port exactly when α(t)·|x| &gt; |m|. The thesis states the condition as α &gt; 1; with the input
+  samples of this port not normalised (|x| ≈ 0.90–0.92) that is α(t) &gt; ≈ 1.1, i.e. t ≤ 11 here.
+  For unit-length inputs the two conditions coincide.</li>
+</ul>
+<h2>2. Phase check</h2>
+<p>Phases displayed by the information panel for one full iteration, as executed by the engine
+(<code>selectPartOfIteration</code> equivalent), compared with §3.1 of the build brief and §4.1.3 of the thesis:</p>
+<p><strong>HCL:</strong> Initial state → Selection of the input sample → Selection of the winning neuron (HCL) →
+Adaptation of the winning neuron (HCL, movement animated). — Matches the four states listed in
+§4.1.3. No deviation.</p>
+<p><strong>Dot Product SOM:</strong> Initial state → Selection of the input sample → Selection of the winning
+neuron (Dot Product SOM) → Adaptation 1/6 drawing the neuron vector m → 2/6 adding the input
+vector x to m → 3/6 shortening x by the coefficient α(t) → 4/6 drawing the new vector m + α(t)·x
+→ 5/6 normalising the new vector → 6/6 moving the neuron (movement animated). — Matches the six
+partial parts of the adaptation listed in §4.1.3. No deviation.</p>
+<p><strong>Both at once (ExecuteNnetAll, Example 8):</strong> Initial state → Selection of the input sample →
+HCL winner → HCL adaptation → Dot Product SOM winner → the six Dot Product SOM adaptation parts.
+The thesis says <code>ExecuteNnetAll</code> simulates both networks on the same input at once but does not
+specify the order of the two networks' phases within an iteration; the port runs the HCL phases
+first, then the Dot Product SOM phases, on the same selected sample. Both layers are drawn on
+one animation panel, as the thesis describes for <code>paintComponent</code> traversing <code>allLayers</code>.</p>
+<p>Each phase shows one sentence on what is happening and why (§4.1.2, "an apt description of the
+essence of the current processes"). The Step button executes one atomic phase.</p>
+<p>In fast mode only the final state of every 50th iteration is drawn (thesis §4.1.3: "a parameter
+whose value determines after how many iterations the current state is to be displayed").</p>
+<h2>3. Examples check (seed 2001, fast mode, run to timeOfFinish)</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Example</th>
+<th>Effect described in the thesis</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Introduction to HCL</td>
+<td>first move lands on the sample, later moves shrink</td>
+<td><strong>Yes</strong> — see §1.1.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Introduction to Dot Product SOM</td>
+<td>vector composition, normalisation, un-learning at α &gt; 1</td>
+<td><strong>Yes</strong> — see §1.2.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Poor initialisation in HCL</td>
+<td>one neuron captures region 1, the others never enter it</td>
+<td><strong>Yes</strong> — wins for region-1 samples during learning: [320, 0, 0, 0, 0, 0]; for region-2 samples: [0, 40, 71, 63, 54, 52]. Final positions (−0.6064, 0.0101); (0.6692, 0.0539); (0.5855, 0.0958); (0.5200, −0.0090); (0.5898, −0.0782); (0.7014, −0.0440).</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Suitable initialisation in HCL</td>
+<td>neurons spread over both regions</td>
+<td><strong>Yes</strong> — wins for region-1 samples: [145, 94, 81, 0, 0, 0]; region-2: [0, 0, 0, 93, 101, 86]; three neurons end in each region: (−0.6582, −0.0027); (−0.5366, 0.0603); (−0.5232, −0.0606); (0.5538, −0.0514); (0.5993, 0.0871); (0.6832, −0.0338).</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Selection method in HCL</td>
+<td>in order: the second neuron never wins; random: it joins</td>
+<td><strong>Yes</strong> — in order: wins [360, 0], neuron 2 stays at (−1.2000, −0.8000), neuron 1 ends at (−0.0864, 0.0066); random: wins [181, 179], final (0.0339, 0.4443) and (−0.1575, −0.3909).</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Selection method in Dot Product SOM</td>
+<td>in order: the second neuron never wins; random: it joins</td>
+<td><strong>Partly</strong> — in order: neuron 1 alone wins the first 276 iterations (77 % of the run); from t = 277 (α = 0.347) neuron 2 wins 47 of the remaining 84, final wins [313, 47]. Random: wins [174, 186], both neurons normalised. See the note below.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Four isolated regions (Fig. 2.1)</td>
+<td>four neurons end near four centres</td>
+<td><strong>Yes</strong> for seed 2001 — final (0.6729, 0.1972); (0.6832, 0.7968); (0.2373, 0.8045); (0.2310, 0.1896), each within 0.02 of a different region centre. Over seeds 1–50 the effect occurs for 49 seeds and fails for seed 8 (one region captures two neurons — the dependence on initialisation of Example 3).</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Different conception of clusters</td>
+<td>HCL: one cluster per neuron; Dot: one whole triple per neuron</td>
+<td><strong>Yes</strong> — HCL: after learning each of the six neurons wins exactly the 40 samples of one cluster; final positions (0.3232, 0.1065); (0.5993, 0.2160); (0.8890, 0.3251); (−0.3116, 0.1548); (−0.5953, 0.2553); (−0.8500, 0.4051). Dot: neuron 1 at angle 19.78° wins all 120 samples of the triple on the 20° line, neuron 2 at 154.87° wins all 120 samples of the triple on the 155° line; both</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Note on Example 6.</strong> Under ordered selection the sample moves 10° per iteration around the
+circle. The dragged neuron follows it with a lag that grows as α(t) decreases: lag 12.3° at
+t = 36 (α = 1.354), 18.5° at t = 144 (α = 0.903), 28.1° at t = 216 (α = 0.602), 46.6° at t = 270
+(α = 0.376), then 170.3° at t = 288 (α = 0.301). The second neuron has length 0.5, so it can win
+only when the first neuron's lag exceeds 60° (cos 60° = 0.5); that happens once α(t) falls below
+≈ 0.35. The thesis does not say for how many iterations the effect is expected to last. With
+the port's linear schedule to zero it lasts 77 % of the run; the check is reported as it came out.
+A control run with the second neuron normalised to length 1 <em>before</em> learning (in order) gave
+wins [182, 178] — with two unit-length neurons the effect does not occur at all, because the
+sequence passes through the second neuron's direction and the lagging first neuron loses there.
+The unnormalised second neuron is the reading of §2.1.6 that makes the thesis's description
+observable; see §4.</p>
+<h2>4. Parameters chosen</h2>
+<p>The thesis gives no numbers for the example geometries, the learning-coefficient schedules or the
+run lengths. Every value below is a choice of the port.</p>
+<p><strong>Learning coefficient.</strong> Linear decrease from the initial value at the first iteration to zero
+at the last: c(t) = c₀ · (T − t)/(T − 1), where T = timeOfFinish and t = timeActual (incremented
+on each selection of an input sample, as §4.3.5 describes). HCL: h₀ = 1.0, so that the first
+adaptation moves the neuron all the way to the sample (Example 1). Dot Product SOM: α₀ = 1.5, so
+that α starts above 1 (§2.1.6) and the un-learning of §1.2 is visible. The thesis says only
+that the coefficient is "derived from" timeActual and decreases toward zero.</p>
+<p><strong>Run lengths (timeOfFinish).</strong> Examples 1–2: 40; 3–4: 600; 5–6: 360 (ten passes around the
+36-sample circle); 7: 800; 8: 900. Custom configurations built by hand: at least 200.</p>
+<p><strong>Input data (<code>setOfInputData</code>).</strong> Five sets, only those the eight examples need:</p>
+<ul>
+<li>Two input samples: (0.90, 0.20) and (0.30, 0.85), |x| ≈ 0.92 and 0.90 (close to 1 so that
+  α &gt; 1 un-learns for a visible number of iterations).</li>
+<li>Two isolated regions: discs of radius 0.15 centred at (−0.6, 0) and (0.6, 0), 150 samples each,
+  constant density (<code>fetchFullCircle</code>); region diameter 0.3.</li>
+<li>Circle centred at [0,0]: 36 samples on the circumference of radius 0.6, in angular order.</li>
+<li>Four isolated regions: discs of radius 0.10 centred at (0.22, 0.8), (0.68, 0.8), (0.22, 0.2),
+  (0.68, 0.2), 120 samples each — read off Fig. 2.1.</li>
+<li>Two triples of clusters: lines through the origin at 20° and 155° (enclosed angle 135°, the
+  thesis requires ≥ 130°); cluster centres at radii 0.35, 0.65, 0.95 on each line; discs of
+  radius 0.06, 40 samples each.</li>
+</ul>
+<p><strong>HCL neuron layouts (<code>setOfHCLData</code>).</strong></p>
+<ul>
+<li>Example 1: (−0.5, −0.4).</li>
+<li>Example 3 (poor): neuron 1 at (−0.3, 0.2), distance to the nearest point of region 1 = 0.21;
+  the other five around region 2 at (0.77, 0), (0.65, 0.16), (0.46, 0.10), (0.46, −0.10),
+  (0.65, −0.16), each ≥ 0.9 from the nearest point of region 1, i.e. farther than the region's
+  diameter 0.3 — the condition stated in Example 3.</li>
+<li>Example 4 (suitable): (−0.5, 0.25), (−0.72, −0.15), (−0.45, −0.22), (0.5, 0.25),
+  (0.72, −0.15), (0.45, −0.22).</li>
+<li>Examples 5–6: neuron 1 at (0.5, 0.5); neuron 2 at (−1.2, −0.8), 0.842 from the nearest sample,
+  which is more than the radius 0.6 (Example 5's condition) and less than the diameter 1.2 (so
+  that random selection lets it win).</li>
+<li>Example 7: four neurons uniformly random in [0,1]², drawn from the seeded generator.</li>
+<li>Example 8: six neurons at radii 0.35, 0.65, 0.95 on the lines at 35° and 140°, i.e. 15° off the
+  cluster lines, so that each neuron's nearest cluster is a different one (a suitable
+  initialisation in the sense of Example 4; with random placement the outcome of Example 3 could
+  occur instead).</li>
+</ul>
+<p><strong>Dot Product SOM neuron layouts (<code>setOfDotData</code>).</strong> Initial vectors are not normalised, per
+§2.1.6 ("as soon as a not-yet-used neuron is adapted, it is automatically normalized from that
+time on"); the port normalises a neuron only through relation (2.21).</p>
+<ul>
+<li>Example 2: (−0.3, −0.5), |m| = 0.583.</li>
+<li>Example 6: neuron 1 (0.4, 0.35), |m| = 0.531; neuron 2 (−0.3, −0.4), |m| = 0.5. The length of
+  neuron 2 is what keeps it from winning under ordered selection (§3, note on Example 6).</li>
+<li>Example 8 and the default for other data: (0.5, −0.3) and (−0.2, 0.6).</li>
+</ul>
+<p><strong>Other.</strong> Fast mode redraws every 50 iterations. Slow-mode delay per phase: 60 ms + 14 ms per
+speed-slider percent below 100. Random numbers: mulberry32 seeded from the Seed field; one
+generator per simulation feeds data generation, random layouts and random sample selection.</p>
+<h2>5. Known gaps</h2>
+<p>What the thesis says about the 2001 applet that the port does not contain, or cannot show is the
+same:</p>
+<ol>
+<li><strong>The original Java source was not an input of the port.</strong> The port was written against the
+   thesis's description of the classes (§4.3: <code>Parameters</code>, <code>Layer*</code>, <code>Nnet*</code>, <code>ExecuteNnet*</code>,
+   <code>MainGraphicsPanel</code>, <code>RunNnet</code>) and the algorithms (2.4), (2.5), (2.9), (2.21). Whether the
+   port's numerical behaviour equals the original applet's cannot be verified without that
+   source; the source-code excerpt of <code>ExecuteNnetHCL</code> is in an appendix of the original that the
+   translation does not reproduce.</li>
+<li><strong>Original parameters unknown.</strong> The learning-coefficient schedule, initial coefficients,
+   timeOfFinish values, animation delays, region sizes, sample counts and neuron layouts of the
+   applet's examples are not in the thesis; all are choices listed in §4.</li>
+<li><strong>Predefined data sets.</strong> The applet had 7 predefined input-sample layouts, 5 HCL neuron
+   layouts and 5 Dot Product SOM neuron layouts (§4.3.5). The port has 5, 6 and 3 respectively —
+   only those needed for the eight examples; which sets the original contained beyond that is not
+   stated.</li>
+<li><strong>Example 6</strong> shows the described effect for 77 % of the run, not the whole run (§3).</li>
+<li><strong>WWW presentation</strong> (§4.5: introductory information, theoretical part, reference manual,
+   user guide, optional quiz) and the <strong>user documentation</strong> (§4.6) are not reproduced.</li>
+<li><strong>Testing</strong> (§4.4, Ing. Jan Ingerle) applied to the 2001 applet; the port has not been tested
+   by a second person.</li>
+<li><strong>Kohonen self-organizing map, neural gas, Sammon projection</strong> are analysed in the thesis
+   (§2.1.4, §2.1.5, §3.2.1) but were not implemented in the applet (<code>modeOfExecution</code> has three
+   values: HCL, Dot Product SOM, both — §4.3.5) and are not in the port.</li>
+<li><strong>Layout.</strong> Fig. 4.5 places the information panel above and the control panel below the
+   animation; the port keeps the information panel above the canvas and puts the controls in a
+   side column. Colours (<code>activeColor</code> / <code>passiveColor</code> of the layers) are the port's own.</li>
+<li><strong>Additions not in the thesis:</strong> the Step button (one atomic phase per click), the Seed field,
+   and the example description shown under the canvas. Restart is done with a generation counter
+   instead of <code>parameter.stop</code> and a thread interrupt.</li>
+<li><strong>Fast-mode display interval</strong> is fixed at 50 iterations, not a user-settable parameter.</li>
+<li><strong>Phase order in the combined simulation</strong> (<code>ExecuteNnetAll</code>) is the port's choice (§2).</li>
+</ol>
+<h2>6. Seed</h2>
+<p>The Seed field (default <strong>2001</strong>) seeds every random choice of a simulation. Restart with the same
+seed, example and selection mode reproduces the same run, and the numbers in this file. The
+Node harness <code>verify.js</code> uses the same seed and the same engine block.</p>
+</div>
+</body>
+</html>
