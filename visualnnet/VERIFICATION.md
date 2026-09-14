@@ -1,7 +1,7 @@
 # VisualNnet port — verification notes
 
 These notes record what was checked in the 2026 HTML5 Canvas port against the 2001 thesis
-(unofficial English translation, `thesis/Hummel_2001_thesis_EN_unofficial.pdf`), what had to be
+(unofficial English translation, `thesis/Hummel_2001_thesis_EN_translation.pdf`), what had to be
 chosen because the thesis does not give it, and what the port does not contain.
 
 All numbers below come from actual runs of the engine, not from reading the code. The engine is

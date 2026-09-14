@@ -1,6 +1,6 @@
 # Note on the translation
 
-`Hummel_2001_thesis_EN_unofficial.pdf` is an unofficial, unauthorised English translation of a
+`Hummel_2001_thesis_EN_translation.pdf` is an unofficial, unauthorised English translation of a
 Czech master's thesis defended at the Czech Technical University in Prague, Faculty of
 Electrical Engineering, in 2001 (author: Petr Hummel). It was produced in 2026, decades after
 the original. The PDF is included here unchanged. What follows restates the translator's notes

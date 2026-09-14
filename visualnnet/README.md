@@ -66,7 +66,7 @@ and are not implemented here. The Step button and the Seed field are additions o
 
 ## The translation
 
-`thesis/Hummel_2001_thesis_EN_unofficial.pdf` is an unofficial English translation of the Czech
+`thesis/Hummel_2001_thesis_EN_translation.pdf` is an unofficial English translation of the Czech
 original, produced in 2026 from OCR of the original PDF, whose Type 3 fonts carried no text layer.
 The prose was recovered with high fidelity; the equations were reconstructed by hand from the
 rendered pages, and (2.18)–(2.19), illegible in the first scan, were recovered from the original
