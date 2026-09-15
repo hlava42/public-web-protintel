@@ -155,6 +155,15 @@
   }
   .pov p:last-child { margin-bottom: 0; color: var(--muted); }
 
+  /* pull quote */
+  .quote { padding: clamp(40px, 7vh, 80px) 0 clamp(24px, 4vh, 48px); max-width: 60ch; }
+  .quote blockquote {
+    margin: 0; font-family: var(--display); font-weight: 500;
+    font-size: clamp(1.32rem, 2.7vw, 1.95rem); line-height: 1.36; letter-spacing: -0.014em; color: var(--ink);
+  }
+  .quote blockquote .soft { color: var(--muted); font-weight: 500; }
+  .quote .qmark { color: var(--accent); }
+
   /* footer */
   .site-footer {
     border-top: 1px solid var(--line); padding: 40px 0 56px;
@@ -222,9 +231,16 @@
 
       <section class="pov">
         <p class="pov-label">What I do</p>
-        <p>Review of an AI system before deployment: facts in, classification and requirement set out, every step traceable, with the evidence a supplier must provide. Shown live in thirty minutes on a system of your choosing.</p>
+        <p>Review of an AI system before deployment: facts in, requirements out, every step traceable. Shown live in thirty minutes on a system of your choosing.</p>
         <p>NIS2, EU AI Act and CRA adoption connected to what an organisation already runs: ISO 27001, risk management, secure architecture, supply chain security.</p>
-        <p>Talks and training for people who have to decide; technical testing of deployed AI models through a partner. No gold-plating, no oversized engagements.</p>
+        <p>Talks and training for leadership and specialist teams. No gold-plating, no oversized engagements.</p>
+      </section>
+
+      <section class="quote" aria-label="Method">
+        <blockquote>
+          <span class="qmark">&ldquo;</span>Nobody has AI under control. The work is not to chase reliability but to manage unreliability.
+          <span class="soft">The way we already do with people: checks, second readings, recertification.</span><span class="qmark">&rdquo;</span>
+        </blockquote>
       </section>
 
       <section class="spec" aria-label="Work">
