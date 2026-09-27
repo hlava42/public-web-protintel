@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Petr Hummel - I take things apart to understand them</title>
-<meta name="description" content="A notebook, not a brochure. Neural networks taken apart in 2001, the AI Act read line by line, and the three words everyone confuses. Talks, and what I read." />
+<title>A neural network, watched while it learns · Protintel</title>
+<meta name="description" content="A self-organizing neural network from 2001 with every step of the learning drawn on screen. Rebuilt for the browser, with verification notes." />
 <meta name="robots" content="index, follow" />
 
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Petr Hummel - I take things apart to understand them" />
-<meta property="og:description" content="A notebook, not a brochure. Neural networks in 2001, the AI Act line by line, three words everyone confuses." />
+<meta property="og:title" content="A neural network, watched while it learns" />
+<meta property="og:description" content="A self-organizing neural network from 2001 with every step of the learning drawn on screen. Rebuilt for the browser, with verification notes." />
 <meta property="og:url" content="https://protintel.com" />
 
 <!-- Fonts: replace with local @font-face files when convenient; this is the only external request on the page. -->
@@ -20,12 +20,10 @@
 <style>
   :root {
     --bg:        #0E1116;
-    --bg-elev:   #161B22;
     --ink:       #ECEFF3;
     --muted:     #9AA4B0;
     --faint:     #626C7A;
     --line:      rgba(255, 255, 255, 0.09);
-    --line-soft: rgba(255, 255, 255, 0.05);
     --accent:    #C8923E;
     --accent-hi: #DBA552;
 
@@ -41,6 +39,9 @@
 
   body {
     margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     background: var(--bg);
     color: var(--ink);
     font-family: var(--body);
@@ -63,7 +64,8 @@
     z-index: 10;
   }
 
-  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; width: 100%; }
+  .wrap.grow { flex: 1 0 auto; }
   a { color: inherit; }
 
   /* top bar */
@@ -83,8 +85,8 @@
   }
   .topbar-contact:hover { color: var(--ink); border-color: var(--accent); }
 
-  /* hero */
-  .hero { padding: clamp(72px, 16vh, 168px) 0 clamp(48px, 8vh, 96px); }
+  /* the piece */
+  .hero { padding: clamp(72px, 16vh, 168px) 0 clamp(64px, 10vh, 120px); }
   .eyebrow {
     font-family: var(--mono); font-size: 12.5px; font-weight: 500; letter-spacing: 0.26em;
     text-transform: uppercase; color: var(--accent); margin: 0 0 30px;
@@ -92,7 +94,7 @@
   }
   .hero-title {
     font-family: var(--display); font-weight: 600; font-size: clamp(2.5rem, 6.2vw, 4.25rem);
-    line-height: 1.04; letter-spacing: -0.018em; margin: 0; max-width: 16ch;
+    line-height: 1.04; letter-spacing: -0.018em; margin: 0; max-width: 22ch;
     opacity: 0; animation: rise .8s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: .14s;
   }
   .mark { position: relative; white-space: nowrap; }
@@ -122,68 +124,12 @@
   .cta:hover .arrow { transform: translateX(3px); }
   .cta-aside { font-size: 14.5px; color: var(--faint); }
 
-  /* spec strips */
-  .spec { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 6px 0; }
-  .spec + .spec { border-top: none; }
-  .spec-row {
-    display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: baseline;
-    padding: 18px 0; border-bottom: 1px solid var(--line-soft);
+  .after {
+    max-width: 56ch; margin: clamp(40px, 7vh, 72px) 0 0; padding-top: 26px; border-top: 1px solid var(--line);
+    font-size: 16px; color: var(--faint); line-height: 1.6;
+    opacity: 0; animation: rise .8s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: .5s;
   }
-  .spec-row:last-child { border-bottom: none; }
-  .spec-key {
-    font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--faint);
-  }
-  .spec-val { font-size: 16.5px; color: var(--ink); }
-  .spec-val .dim { color: var(--muted); }
-  .spec-val a { text-decoration: none; border-bottom: 1px solid var(--accent); transition: color .2s ease; }
-  .spec-val a:hover { color: var(--accent-hi); }
-  .spec-title {
-    font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.24em;
-    text-transform: uppercase; color: var(--accent); margin: 0; padding: 26px 0 6px;
-  }
-
-  /* what I do */
-  .pov { padding: clamp(24px, 5vh, 56px) 0 clamp(48px, 8vh, 88px); max-width: 62ch; }
-  .pov-label {
-    font-family: var(--mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.24em;
-    text-transform: uppercase; color: var(--accent); margin: 0 0 22px;
-  }
-  .pov p {
-    font-size: clamp(1.12rem, 1.7vw, 1.38rem); line-height: 1.62; color: var(--ink);
-    margin: 0 0 1.1em; letter-spacing: -0.003em;
-  }
-  .pov p:last-child { margin-bottom: 0; color: var(--muted); }
-
-  /* pieces (taking apart) */
-  .pieces { padding: clamp(24px, 5vh, 56px) 0 0; }
-  .piece {
-    display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: baseline;
-    padding: 26px 0; border-bottom: 1px solid var(--line-soft);
-  }
-  .piece:last-child { border-bottom: none; }
-  .piece h2 {
-    font-family: var(--display); font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.42rem);
-    line-height: 1.3; letter-spacing: -0.012em; margin: 0 0 10px; color: var(--ink);
-  }
-  .piece h2 a { text-decoration: none; border-bottom: 1px solid var(--accent); }
-  .piece h2 a:hover { color: var(--accent-hi); }
-  .piece p { margin: 0 0 0.8em; font-size: 16.5px; color: var(--muted); max-width: 62ch; }
-  .piece p:last-child { margin-bottom: 0; }
-  .piece p strong { color: var(--ink); font-weight: 500; }
-
-  /* reading */
-  .reading .spec-val { font-size: 16px; }
-  .colophon { font-size: 14.5px; color: var(--faint); max-width: 60ch; margin: 14px 0 0; line-height: 1.55; }
-
-  /* pull quote */
-  .quote { padding: clamp(40px, 7vh, 80px) 0 clamp(24px, 4vh, 48px); max-width: 60ch; }
-  .quote blockquote {
-    margin: 0; font-family: var(--display); font-weight: 500;
-    font-size: clamp(1.32rem, 2.7vw, 1.95rem); line-height: 1.36; letter-spacing: -0.014em; color: var(--ink);
-  }
-  .quote blockquote .soft { color: var(--muted); font-weight: 500; }
-  .quote .qmark { color: var(--accent); }
+  .after p { margin: 0; }
 
   /* footer */
   .site-footer {
@@ -196,6 +142,7 @@
     color: var(--faint); margin-top: 8px;
   }
   .footer-id .legal { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-top: 10px; letter-spacing: 0.04em; }
+  .colophon { font-size: 14.5px; color: var(--faint); max-width: 60ch; margin: 14px 0 0; line-height: 1.55; }
   .footer-links { display: flex; gap: 22px; font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.05em; }
   .footer-links a {
     color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent;
@@ -211,21 +158,19 @@
 
   @media (max-width: 620px) {
     body { font-size: 16px; }
-    .spec-row { grid-template-columns: 1fr; gap: 7px; padding: 16px 0; }
-    .piece { grid-template-columns: 1fr; gap: 6px; padding: 22px 0; }
     .topbar-contact { display: none; }
-    .hero-title { max-width: 18ch; }
+    .hero-title { max-width: 14ch; }
     .footer-links { gap: 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .eyebrow, .hero-title, .hero-sub, .cta-row { opacity: 1; animation: none; transform: none; }
+    .eyebrow, .hero-title, .hero-sub, .cta-row, .after { opacity: 1; animation: none; transform: none; }
     .mark::after { transform: scaleX(1); animation: none; }
     .status-dot { animation: none; }
   }
 </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="wrap grow">
 
     <header class="topbar">
       <a class="wordmark" href="/" aria-label="Protintel - home">
@@ -237,115 +182,36 @@
 
     <main>
       <section class="hero">
-        <p class="eyebrow">A notebook, not a brochure</p>
-        <h1 class="hero-title">I take things <span class="mark">apart</span> to understand them.</h1>
+        <p class="eyebrow">2001 · Master's thesis</p>
+        <h1 class="hero-title">A neural network, <span class="mark">watched</span> while it learns.</h1>
         <p class="hero-sub">
-          <strong>Neural networks in 2001, to see how they learn.</strong>
-          AI systems now, to see what they did and why - and what it takes for them to hold up under inspection. What I find ends up here, in talks, and in the reading list at the bottom.
+          <strong>Self-organizing networks with every step of the learning drawn on screen,</strong> so you can see the map form instead of trusting the numbers. Rebuilt for the browser, with verification notes. The 2001 look was kept on purpose.
         </p>
         <div class="cta-row">
-          <span class="cta-aside">Prague · in-house by day; the talks and the writing are my own.</span>
+          <a class="cta" href="/visualnnet/">Open it <span class="arrow" aria-hidden="true">&rarr;</span></a>
+          <span class="cta-aside">Runs in the browser. Nothing to install.</span>
+        </div>
+        <div class="after">
+          <p>Twenty-five years later the question is the same. The networks are bigger, and the learning is harder to draw.</p>
         </div>
       </section>
-
-      <section class="pieces" aria-label="Taking apart">
-        <p class="spec-title">Taking apart</p>
-
-        <article class="piece">
-          <div class="spec-key">2001</div>
-          <div>
-            <h2><a href="/visualnnet/">A neural network, watched while it learns</a></h2>
-            <p>My master's thesis: self-organizing networks with every step of the learning drawn on screen, so you could see the map form instead of trusting the numbers. Rebuilt for the browser with verification notes. <strong>The 2001 look was kept on purpose.</strong></p>
-            <p>Twenty-five years later the question is the same, only the networks are bigger and nobody draws the learning any more.</p>
-          </div>
-        </article>
-
-        <article class="piece">
-          <div class="spec-key">2026</div>
-          <div>
-            <h2>The AI Act, read line by line</h2>
-            <p>876 rows, each traced to the article it comes from. What is left when you do that is not a checklist. It is three questions, in the order the Act itself asks them: <strong>know and govern · build and prove · run and respond.</strong> Everything else is a row under one of the three.</p>
-            <p>What surprised me most: how much of the work is deciding, per system, which rows apply at all - and how little of it is the rows themselves.</p>
-          </div>
-        </article>
-
-        <article class="piece">
-          <div class="spec-key">Vocabulary</div>
-          <div>
-            <h2>Three words that get used for one thing</h2>
-            <p><strong>Triage</strong> sorts by how bad it would be if it failed - no likelihood, no controls, minutes. <strong>Assessment</strong> asks how likely, what to do about it, and what is left afterwards - days. <strong>Assurance</strong> asks whether what you did actually works - tested, not estimated.</p>
-            <p>Most arguments about "AI risk" are three people using one word for three different things. Name the level first; the argument usually ends.</p>
-          </div>
-        </article>
-      </section>
-
-      <section class="quote" aria-label="Method">
-        <blockquote>
-          <span class="qmark">&ldquo;</span>Nobody has AI under control. The work is not to chase reliability but to manage unreliability.
-          <span class="soft">The way we already do with people: checks, second readings, recertification.</span><span class="qmark">&rdquo;</span>
-        </blockquote>
-      </section>
-
-      <section class="spec" aria-label="Work">
-        <p class="spec-title">Work</p>
-        <div class="spec-row">
-          <div class="spec-key">2021 → 2023</div>
-          <div class="spec-val">E-health platform and a digital production line for blood-sampling kits <span class="dim">- built and run in production for a regulated laboratory group; kits notified with SÚKL.</span></div>
-        </div>
-        <div class="spec-row">
-          <div class="spec-key">2020 → 2024</div>
-          <div class="spec-val">ISMS certified to ISO/IEC 27001 with 27701 <span class="dim">- designed, run and certified (DNV, UKAS) for my own consulting firm.</span></div>
-        </div>
-        <div class="spec-row">
-          <div class="spec-key">2025 · 2026</div>
-          <div class="spec-val">Kyberprostor na hraně zákona <span class="dim">- cybersecurity conference for students, initiated and co-organised; 2026 hosted by FEL CTU.</span></div>
-        </div>
-        <div class="spec-row">
-          <div class="spec-key">Talks 2026</div>
-          <div class="spec-val">CZECRIN Brno · Czech Electrotechnical Association, Mikulov · AMPER Brno · Czech Accreditation Institute, Prague (October) <span class="dim">- on AI and clinical data, a CEO blackmailed by AI, ransomware negotiations, and classifying AI systems so that an assessor can follow the trail.</span></div>
-        </div>
-      </section>
-
-      <section class="spec reading" aria-label="Reading">
-        <p class="spec-title">What I read, and why</p>
-        <div class="spec-row">
-          <div class="spec-key">Karpathy</div>
-          <div class="spec-val"><a href="https://karpathy.ai/" target="_blank" rel="noopener">karpathy.ai</a> <span class="dim">- the clearest explanations of what these models actually are. When he changes his mind, I re-read.</span></div>
-        </div>
-        <div class="spec-row">
-          <div class="spec-key">System cards</div>
-          <div class="spec-val">The frontier labs' own system cards <span class="dim">- the primary source on what a model was built to do and where it was tested; a biased witness on dates, an honest one on intent.</span></div>
-        </div>
-        <div class="spec-row">
-          <div class="spec-key">METR</div>
-          <div class="spec-val"><a href="https://metr.org/" target="_blank" rel="noopener">metr.org</a> <span class="dim">- measures what models can do over long tasks, which is the number that decides what an organisation should let them do alone.</span></div>
-        </div>
-        <div class="spec-row">
-          <div class="spec-key">Epoch AI</div>
-          <div class="spec-val"><a href="https://epoch.ai/" target="_blank" rel="noopener">epoch.ai</a> <span class="dim">- the trend lines: compute, cost, capability. Planning horizons come from here, not from press releases.</span></div>
-        </div>
-        <div class="spec-row">
-          <div class="spec-key">AI Office · NÚKIB</div>
-          <div class="spec-val">Guidance from the <a href="https://digital-strategy.ec.europa.eu/en/policies/ai-office" target="_blank" rel="noopener">European AI Office</a> and <a href="https://nukib.gov.cz/" target="_blank" rel="noopener">NÚKIB</a> <span class="dim">- what the regulators say they will look for, in their own words, before anyone else paraphrases it.</span></div>
-        </div>
-        <p class="colophon">Five sources, on purpose. The output of reading them is a note here or a change in a talk - not a folder.</p>
-      </section>
-
     </main>
 
+  </div>
+
+  <div class="wrap">
     <footer class="site-footer">
       <div class="footer-id">
         <div class="name">Petr Hummel</div>
         <div class="gloss">Protection · Intelligence</div>
         <div class="legal">Ing. Petr Hummel · IČO 03292801 · Prague</div>
-        <p class="colophon">A notebook, not a brochure. I work in-house; the talks and the writing are my own.</p>
+        <p class="colophon">I work in-house; this page is my own.</p>
       </div>
       <nav class="footer-links" aria-label="Contact">
         <a href="mailto:petr.hummel@protintel.com">Email</a>
         <a href="https://www.linkedin.com/in/petrhummel/" target="_blank" rel="noopener">LinkedIn</a>
       </nav>
     </footer>
-
   </div>
 </body>
 </html>
